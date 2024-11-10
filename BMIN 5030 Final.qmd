@@ -1,0 +1,152 @@
+---
+title: "Your Title"
+subtitle: "BMIN 5030 Final Project"
+author: "Lee Krobock"
+format: html
+editor: visual
+number-sections: true
+embed-resources: true
+---
+
+------------------------------------------------------------------------
+
+## Overview {#sec-overview}
+
+A relatively recent development in preventative medicine, the human papillomavirus (HPV) vaccine confers immunity to multiple oncogenic strains of HPV.  Studies have demonstrated decreased risks of head, neck, and cervical cancers, and cervical dysplasia in vaccinated individuals.^1^  Despite this, HPV vaccination has proven to be a challenging task in practice, with multiple changes to vaccine recommendations since its initial release and notable vaccine hesitancy, particularly early in its history and among parents of children and adolescents.  The goal of this project is to analyze questionnaire data from the National Health and Nutrition Examination Survey (NHANES) from 2013 to 2023 to describe trends in HPV vaccine coverage and vaccination practices in the United States.
+
+[Final Project GitHub repository](https://github.com/lkrobock/BMIN-5030-Final-Project)
+
+## Introduction {#sec-introduction}
+
+The first vaccine against human papillomavirus, Gardasil 4vHPV, was licensed for use by the U.S. Food and Drug Administration (FDA) in June 2006, followed by official recommendations for use by the Advisory Committee on Immunization Practices (ACIP) published in March 2007.^2^ This quadrivalent vaccine provided protection against four strains of HPV and was initially recommended only for female patients between the ages of 9 and 26 years.^2^ Subsequently, in 2010, these recommendations were expanded to include males between ages 9 and 26.^3^ Following the 2015 FDA approval of a nonavalent HPV vaccine, which provided protection against an additional five disease-associated strains, the ACIP updated its recommendations to consider two appropriately-timed doses of HPV vaccine to be a completed series in patients who received the first dose between ages 9 and 14.^4^ The most recent update to HPV immunization guidelines recommends “shared clinical decision-making” to guide vaccination in adults between ages 27 and 45 years old, and notes that HPV vaccines are not licensed for use in adults over age 45.^5^
+
+There are significant and well-described benefits to HPV vaccination– studies have demonstrated decreased risk of strain-specific HPV infection and associated growths, dysplasias, and cancers.^1,6^ Furthermore, Ellingson et al. noted in their systematic review that multiple studies suggest increased vaccine effectiveness with younger patient age at vaccination.^6^ In practice, however, clinicians have encountered challenges in implementing HPV vaccination as a standard preventative care practice.  In addition to slow shifts in practice following official recommendations and guideline updates, providers describe patient hesitancy early in the history of the HPV vaccine, related to potential side effects, adverse effects, and concerns about children and adolescents becoming sexually active earlier following vaccination.  In one clinician’s experience, it was not until the link between HPV and cancer became more widely understood by the public and HPV vaccination was marketed toward adults in addition to pediatric patients that it gained traction with the public.
+
+Preventative healthcare, including immunization, is an interdisciplinary pursuit that requires insight and participation from clinicians, health educators, epidemiologists and public health researchers, medical and industry researchers, policymakers, and patient stakeholders.  By analyzing the data, I hope to identify and describe changes in HPV vaccination practices that may inform ongoing efforts in health promotion and preventative care.
+
+## Methods {#sec-methods}
+
+Review NHANES datasets/program and nhanesA R package.
+
+```{r}
+# Required packages
+
+library(tidyverse)  #dplyr, readr, ggplot2, stringr + tibble, tidyr
+library(nhanesA)
+
+
+```
+
+```{r}
+# Load desired NHANES data sets for demographics and immunization specific questionnaires
+
+nhanes2013d <- nhanes('DEMO_H')
+nhanes2013i <- nhanes('IMQ_H')
+nhanes2015d <- nhanes('DEMO_I')
+nhanes2015i <- nhanes('IMQ_I')
+nhanes2017d <- nhanes('P_DEMO')
+nhanes2017i <- nhanes('P_IMQ')
+nhanes2021d <- nhanes('DEMO_L')
+nhanes2021i <- nhanes('IMQ_L')
+
+```
+
+```{r}
+nhanes2013demo <- nhanes2013d |>
+  mutate(nhanes2013d, DataCycle = "2013-2014") |>
+  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
+  rename(ID = SEQN, 
+         Gender = RIAGENDR, 
+         Age = RIDAGEYR)
+nhanes2013imm <- nhanes2013i |>
+  select(SEQN, IMQ040, IMQ070, IMQ090, IMQ045) |> 
+  rename(ID = SEQN, 
+         AnyHPVFemales = IMQ040, 
+         AnyHPVMales = IMQ070, 
+         FirstDoseAge = IMQ090,
+         TotalShots = IMQ045)
+nhanes2013all <- left_join(nhanes2013demo, nhanes2013imm, by = c("ID"))
+
+
+nhanes2015demo <- nhanes2015d |>
+  mutate(nhanes2015d, DataCycle = "2015-2016") |>
+  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
+  rename(ID = SEQN, 
+         Gender = RIAGENDR, 
+         Age = RIDAGEYR)
+nhanes2015imm <- nhanes2015i |>
+  select(SEQN, IMQ060, IMQ070, IMQ090, IMQ100) |> 
+  rename(ID = SEQN, 
+         AnyHPVFemales = IMQ060, 
+         AnyHPVMales = IMQ070, 
+         FirstDoseAge = IMQ090,
+         TotalShots = IMQ100)
+
+nhanes2017demo <- nhanes2017d |>
+  mutate(nhanes2017d, DataCycle = "2017-2020") |>
+  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
+  rename(ID = SEQN, 
+         Gender = RIAGENDR, 
+         Age = RIDAGEYR)
+nhanes2017imm <- nhanes2017i |>
+  select(SEQN, IMQ060, IMQ070, IMQ090, IMQ100) |> 
+  rename(ID = SEQN, 
+         AnyHPVFemales = IMQ060, 
+         AnyHPVMales = IMQ070, 
+         FirstDoseAge = IMQ090,
+         TotalShots = IMQ100)
+
+nhanes2021demo <- nhanes2021d |>
+  mutate(nhanes2021d, DataCycle = "2021-2023") |>
+  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
+  rename(ID = SEQN, 
+         Gender = RIAGENDR, 
+         Age = RIDAGEYR)
+nhanes2021imm <- nhanes2021i |>
+  select(SEQN, IMQ060, IMQ070, IMQ090, IMQ100) |> 
+  rename(ID = SEQN, 
+         AnyHPVFemales = IMQ060, 
+         AnyHPVMales = IMQ070, 
+         FirstDoseAge = IMQ090,
+         TotalShots = IMQ100)
+
+  
+```
+
+Describe the data used and general methodological approach used to address the problem described in the @sec-introduction. Subsequently, incorporate full R code necessary to retrieve and clean data, and perform analysis. Be sure to include a description of code so that others (including your future self) can understand what you are doing and why.
+
+## Results {#sec-results}
+
+Subheader 1:
+
+Subheader 2:
+
+Subheader 3:
+
+```{r}
+
+```
+
+Describe your results and include relevant tables, plots, and code/comments used to obtain them. You may refer to the @sec-methods as needed. End with a brief conclusion of your findings related to the question you set out to address. You can include references if you'd like, but this is not required.
+
+## Conclusion
+
+This the conclusion. The @sec-results can be invoked here.
+
+## Acknowledgements
+
+Acknowledgements here.
+
+## References
+
+1.  DeKloe, J., Urdang, Z. D., Martinez Outschoorn, U. E., & Curry, J. M. (2024). Effects of HPV vaccination on the development of HPV-related cancers: A retrospective analysis of a United States-based cohort.
+
+2.  Centers for Disease Control and Prevention. *Quadrivalent Human Papillomavirus Vaccine: Recommendations of the Advisory Committee on Immunization Practices (ACIP)*. MMWR Early Release 2007;56(RR-12): 1–23.
+
+3.  Centers for Disease Control and Prevention. *FDA Licensure of Quadrivalent Human Papillomavirus Vaccine (HPV4, Gardasil) for Use in Males and Guidance from the Advisory Committee on Immunization Practices (ACIP)*.  MMWR Morbidity and Mortality Weekly Report 2010;59(20): 630–632.
+
+4.  Meites E, Kempe A, Markowitz LE. *Use of a 2-Dose Schedule for Human Papillomavirus Vaccination — Updated Recommendations of the Advisory Committee on Immunization Practices*. MMWR Morbidity and Mortality Weekly Report 2016;65: 1405–1408.
+
+5.  Meites E, Szilagyi PG, Chesson HW, Unger ER, Romero JR, Markowitz LE. *Human Papillomavirus Vaccination for Adults: Updated Recommendations of the Advisory Committee on Immunization Practices*. MMWR Morbidity and Mortality Weekly Report 2019;68: 698–702.
+
+6.  Ellingson, M. K., Sheikha, H., Nyhan, K., Oliveira, C. R., & Niccolai, L. M. (2023). Human papillomavirus vaccine effectiveness by age at vaccination: A systematic review. *Human vaccines & immunotherapeutics*, 19(2), 2239085.
