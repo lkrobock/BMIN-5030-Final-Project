@@ -26,116 +26,400 @@ Preventative healthcare, including immunization, is an interdisciplinary pursuit
 
 ## Methods {#sec-methods}
 
-Review NHANES datasets/program and nhanesA R package.
+The National Health and Nutrition Examination Survey, or NHANES, is a multimodal study program initially conducted by the Centers for Disease Control (CDC) in the early 1960s, intended to provide nationally-representative data on health and nutrition in the United States. Over the past 25 years, the NHANES program evolved into an annual study consisting of health and dietary questionnaires, physical examinations, and laboratory testing. Data is typically reported in two year cycles, during which approximately 5,000 subjects are examined. Sampling and weighting procedures are designed and reviewed with each data cycle so the NHANES captures information that can be considered representative of the entire United States.
+
+The NHANES program was suspended from March 2020 to August 2021 due to the COVID-19 pandemic. Its resumption in 2021 was marked by changes in sampling and study design to mitigate the ongoing spread of COVID-19, and decreased response rates consistent with trends described among other large scale U.S. surveys and studies.^7^ The most recently published NHANES datasets available to the public are from this first post-pandemic survey cycle, conducted from 2021 to 2023.
+
+In 2024, the nhanesA R package was published, providing a means to directly import, search, and review data stored on the CDC's NHANES website in RStudio. Otherwise, NHANES data is stored digitally in SAS transport format files and can be viewed and converted to other formats using the SAS Universal Viewer program.^8^
+
+### Loading required R packages
 
 ```{r}
-# Required packages
 
 library(tidyverse)  #dplyr, readr, ggplot2, stringr + tibble, tidyr
 library(nhanesA)
-
+library(gtsummary)
+library(cowplot)
+library(paletteer)
+library(viridis)
 
 ```
 
+### Loading NHANES demographics datasets
+
 ```{r}
-# Load desired NHANES data sets for demographics and immunization specific questionnaires
 
 nhanes2013d <- nhanes('DEMO_H')
-nhanes2013i <- nhanes('IMQ_H')
 nhanes2015d <- nhanes('DEMO_I')
-nhanes2015i <- nhanes('IMQ_I')
-nhanes2017d <- nhanes('P_DEMO')
-nhanes2017i <- nhanes('P_IMQ')
+nhanes2017d <- nhanes('P_DEMO') 
+
+# Note: Naming convention for 2017-2020 combined, nationally representative pre-pandemic data 'P_filename' differs from the naming format of other data sets.
+
 nhanes2021d <- nhanes('DEMO_L')
+
+```
+
+### Demographics data cleaning and processing
+
+```{r}
+
+nhanes2013demo <- mutate(nhanes2013d, DataCycle = "2013-2014",
+  DataCycle = factor(DataCycle)) |>
+  rename(ID = SEQN, Gender = RIAGENDR, Age = RIDAGEYR) |> 
+  mutate(nhanes2013d, EligibleSubject = case_when(
+    Age >= 9 & Age <= 59 ~ "Eligible",
+    Age < 9 | Age > 59 ~ "Ineligible"), 
+  EligibleSubject = factor(EligibleSubject)) |>
+  select(DataCycle, ID, Gender, Age, EligibleSubject)
+
+# Added a DataCycle variable to identify NHANES cycle year within the dataframe and an EligibleSubject variable to identify subjects in the eligible population sample for the immunization questionnaire.  
+# Renamed variables and selected only variables of interest plus subject ID
+
+nhanes2015demo <- mutate(nhanes2015d, DataCycle = "2015-2016",
+  DataCycle = factor(DataCycle)) |>
+  rename(ID = SEQN, Gender = RIAGENDR, Age = RIDAGEYR) |> 
+  mutate(nhanes2015d, EligibleSubject = case_when(
+    Age >= 9 & Age <= 59 ~ "Eligible",
+    Age < 9 | Age > 59 ~ "Ineligible"), 
+  EligibleSubject = factor(EligibleSubject)) |>
+  select(DataCycle, ID, Gender, Age, EligibleSubject)
+
+nhanes2017demo <- mutate(nhanes2017d, DataCycle = "2017-2020",
+  DataCycle = factor(DataCycle)) |>
+  rename(ID = SEQN, Gender = RIAGENDR, Age = RIDAGEYR) |> 
+  mutate(nhanes2017d, EligibleSubject = case_when(
+    Age >= 9 & Age <= 59 ~ "Eligible",
+    Age < 9 | Age > 59 ~ "Ineligible"), 
+  EligibleSubject = factor(EligibleSubject)) |>
+  select(DataCycle, ID, Gender, Age, EligibleSubject)
+
+# Note: Immunization questionnaire eligiblity changed in the most recent NHANES cycle-- only subjects between ages 9 and 49 were asked about HPV vaccination.  The Results section will examine findings from the 49-59 year old age group in previous cycles.
+
+nhanes2021demo <- mutate(nhanes2021d, DataCycle = "2021-2023",
+  DataCycle = factor(DataCycle)) |>
+  rename(ID = SEQN, Gender = RIAGENDR, Age = RIDAGEYR) |> 
+  mutate(nhanes2021d, EligibleSubject = case_when(
+    Age >= 9 & Age <= 49 ~ "Eligible",
+    Age < 9 | Age > 49 ~ "Ineligible"), 
+  EligibleSubject = factor(EligibleSubject)) |>
+  select(DataCycle, ID, Gender, Age, EligibleSubject)
+
+nhanes_demos <- rbind(nhanes2013demo, nhanes2015demo, nhanes2017demo, nhanes2021demo)
+
+# Created one dataframe to contain the selected demographic data from all four data cycles.
+
+```
+
+### Loading NHANES immunization questionnaire datasets
+
+```{r}
+
+nhanes2013i <- nhanes('IMQ_H')
+nhanes2015i <- nhanes('IMQ_I')
+nhanes2017i <- nhanes('P_IMQ')
+
+# Note: Again, naming convention 'P_filename' for 2017-2020 combined, nationally representative pre-pandemic data differs from the naming format of other data sets.
+
 nhanes2021i <- nhanes('IMQ_L')
 
 ```
 
+### Immunization questionnaire data cleaning and processing
+
 ```{r}
-nhanes2013demo <- nhanes2013d |>
-  mutate(nhanes2013d, DataCycle = "2013-2014") |>
-  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
-  rename(ID = SEQN, 
-         Gender = RIAGENDR, 
-         Age = RIDAGEYR)
+
 nhanes2013imm <- nhanes2013i |>
-  select(SEQN, IMQ040, IMQ070, IMQ090, IMQ045) |> 
-  rename(ID = SEQN, 
-         AnyHPVFemales = IMQ040, 
-         AnyHPVMales = IMQ070, 
+  rename(ID = SEQN,
+         AnyHPVFemales = IMQ040,
+         AnyHPVMales = IMQ070,
          FirstDoseAge = IMQ090,
-         TotalShots = IMQ045)
-nhanes2013all <- left_join(nhanes2013demo, nhanes2013imm, by = c("ID"))
+         TotalShots = IMQ045) |>
+  mutate(AnyHPVShots = case_when(
+  (AnyHPVFemales == "Yes" | AnyHPVMales == "Yes") ~ "Yes",
+  (AnyHPVFemales == "No" | AnyHPVMales == "No") ~ "No"),
+  AnyHPVShots = factor(AnyHPVShots)) |>
+  mutate(HPVComplete = case_when((FirstDoseAge >= 9 & TotalShots == "3 Doses") |
+  (FirstDoseAge >= 9 & FirstDoseAge <= 14 & TotalShots == "2 Doses") ~ "Complete",
+  (FirstDoseAge > 14 & FirstDoseAge <= 59 & TotalShots == "2 Doses") |
+  (FirstDoseAge >= 9 | FirstDoseAge == 999  & (TotalShots == "1 Dose" | TotalShots == "Don't know" | TotalShots == "Refused")) ~ "Incomplete"),
+  HPVComplete = factor(HPVComplete)) |>
+  select(ID, AnyHPVFemales, AnyHPVMales, AnyHPVShots, FirstDoseAge, TotalShots, HPVComplete) 
 
+# Created a "combined" variable for any HPV vaccines received across sex groups.  
+# Additionally created a variable using age at first shot and number of shots received to determine if subject has received a complete HPV vaccine series by current standard of 3 shots or 2 shots if first received before age 15.  Unknown or refused total number of shots recoded to incomplete series.
+# Renamed variables and selected only variables of interest plus subject ID.
 
-nhanes2015demo <- nhanes2015d |>
-  mutate(nhanes2015d, DataCycle = "2015-2016") |>
-  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
-  rename(ID = SEQN, 
-         Gender = RIAGENDR, 
-         Age = RIDAGEYR)
-nhanes2015imm <- nhanes2015i |>
-  select(SEQN, IMQ060, IMQ070, IMQ090, IMQ100) |> 
+# Note: IMQ questionnaire items are the same but with different IDs in the 2013-2014 dataset.
+
+nhanes2015imm <- nhanes2015i |> 
   rename(ID = SEQN, 
          AnyHPVFemales = IMQ060, 
          AnyHPVMales = IMQ070, 
          FirstDoseAge = IMQ090,
-         TotalShots = IMQ100)
+         TotalShots = IMQ100) |>
+  mutate(AnyHPVShots = case_when(
+  (AnyHPVFemales == "Yes" | AnyHPVMales == "Yes") ~ "Yes",
+  (AnyHPVFemales == "No" | AnyHPVMales == "No") ~ "No"),
+  AnyHPVShots = factor(AnyHPVShots)) |>
+  mutate(HPVComplete = case_when((FirstDoseAge >= 9 & TotalShots == "3 Doses") |
+  (FirstDoseAge >= 9 & FirstDoseAge <= 14 & TotalShots == "2 Doses") ~ "Complete", 
+  (FirstDoseAge > 14 & FirstDoseAge <= 59 & TotalShots == "2 Doses") |
+  (FirstDoseAge >= 9 | FirstDoseAge == 999  & (TotalShots == "1 Dose" | TotalShots == "Don't know" | TotalShots == "Refused")) ~ "Incomplete"),
+  HPVComplete = factor(HPVComplete)) |>
+  select(ID, AnyHPVFemales, AnyHPVMales, AnyHPVShots, FirstDoseAge, TotalShots, HPVComplete) 
 
-nhanes2017demo <- nhanes2017d |>
-  mutate(nhanes2017d, DataCycle = "2017-2020") |>
-  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
-  rename(ID = SEQN, 
-         Gender = RIAGENDR, 
-         Age = RIDAGEYR)
 nhanes2017imm <- nhanes2017i |>
-  select(SEQN, IMQ060, IMQ070, IMQ090, IMQ100) |> 
   rename(ID = SEQN, 
          AnyHPVFemales = IMQ060, 
          AnyHPVMales = IMQ070, 
          FirstDoseAge = IMQ090,
-         TotalShots = IMQ100)
+         TotalShots = IMQ100) |>
+  mutate(AnyHPVShots = case_when(
+  (AnyHPVFemales == "Yes" | AnyHPVMales == "Yes") ~ "Yes",
+  (AnyHPVFemales == "No" | AnyHPVMales == "No") ~ "No"),
+  AnyHPVShots = factor(AnyHPVShots)) |>
+  mutate(HPVComplete = case_when((FirstDoseAge >= 9 & TotalShots == "3 Doses") |
+  (FirstDoseAge >= 9 & FirstDoseAge <= 14 & TotalShots == "2 Doses") ~ "Complete",
+  (FirstDoseAge > 14 & FirstDoseAge <= 59 & TotalShots == "2 Doses") |
+  (FirstDoseAge >= 9 | FirstDoseAge == 999  & (TotalShots == "1 Dose" | TotalShots == "Don't know" | TotalShots == "Refused")) ~ "Incomplete"),
+  HPVComplete = factor(HPVComplete)) |>
+  select(ID, AnyHPVFemales, AnyHPVMales, AnyHPVShots, FirstDoseAge, TotalShots, HPVComplete) 
 
-nhanes2021demo <- nhanes2021d |>
-  mutate(nhanes2021d, DataCycle = "2021-2023") |>
-  select(DataCycle, SEQN, RIAGENDR, RIDAGEYR) |>
-  rename(ID = SEQN, 
-         Gender = RIAGENDR, 
-         Age = RIDAGEYR)
 nhanes2021imm <- nhanes2021i |>
-  select(SEQN, IMQ060, IMQ070, IMQ090, IMQ100) |> 
   rename(ID = SEQN, 
          AnyHPVFemales = IMQ060, 
          AnyHPVMales = IMQ070, 
          FirstDoseAge = IMQ090,
-         TotalShots = IMQ100)
+         TotalShots = IMQ100) |>
+  mutate(AnyHPVShots = case_when(
+  (AnyHPVFemales == "Yes" | AnyHPVMales == "Yes") ~ "Yes",
+  (AnyHPVFemales == "No" | AnyHPVMales == "No") ~ "No"),
+  AnyHPVShots = factor(AnyHPVShots)) |>
+  mutate(HPVComplete = case_when((FirstDoseAge >= 9 & TotalShots == "3 Doses") |
+  (FirstDoseAge >= 9 & FirstDoseAge <= 14 & TotalShots == "2 Doses") ~ "Complete", 
+  (FirstDoseAge > 14 & FirstDoseAge <= 49 & TotalShots == "2 Doses") |
+  (FirstDoseAge >= 9 | FirstDoseAge == 999  & (TotalShots == "1 Dose" | TotalShots == "Don't know" | TotalShots == "Refused")) ~ "Incomplete"),
+  HPVComplete = factor(HPVComplete)) |>
+  select(ID, AnyHPVFemales, AnyHPVMales, AnyHPVShots, FirstDoseAge, TotalShots, HPVComplete)
 
-  
+# Created one dataframe to contain the selected demographic data from all four data cycles.
+nhanes_imms <- rbind(nhanes2013imm, nhanes2015imm, nhanes2017imm, nhanes2021imm)
+
 ```
 
-Describe the data used and general methodological approach used to address the problem described in the @sec-introduction. Subsequently, incorporate full R code necessary to retrieve and clean data, and perform analysis. Be sure to include a description of code so that others (including your future self) can understand what you are doing and why.
+### Creating joined demographics and immunization datasets
+
+```{r}
+# Created combined demographics and immunization questionnaire datasets for each NHANES cycle, and one dataset containing all data cycles.
+
+nhanes2013 <- left_join(nhanes2013demo, nhanes2013imm, by = c("ID"))
+nhanes2015 <- left_join(nhanes2015demo, nhanes2015imm, by = c("ID"))
+nhanes2017 <- left_join(nhanes2017demo, nhanes2017imm, by = c("ID"))
+nhanes2021 <- left_join(nhanes2021demo, nhanes2021imm, by = c("ID"))
+
+nhanes_all <- rbind(nhanes2013, nhanes2015, nhanes2017, nhanes2021)
+
+# Created a dataset specifically for subjects meeting HPV vaccine questionnaire eligibility, i.e. age 9-59 in pre-pandemic datasets and age 9-49 in post-pandemic dataset.
+
+nhanes_hpv_eligible <- filter(nhanes_all, EligibleSubject == "Eligible")
+
+```
+
+*Describe the data used and general methodological approach used to address the problem described in the @sec-introduction. Subsequently, incorporate full R code necessary to retrieve and clean data, and perform analysis. Be sure to include a description of code so that others (including your future self) can understand what you are doing and why.*
 
 ## Results {#sec-results}
 
-Subheader 1:
+### Reviewing participant demographics
 
-Subheader 2:
+```{r}
 
-Subheader 3:
+demos_summary <- nhanes_demos |>
+  select(DataCycle, Gender, Age, EligibleSubject) |>
+  tbl_summary(by = DataCycle) |>
+  modify_caption("**Table 1: NHANES Subject Demographics**") |>
+  bold_labels()
+print(demos_summary)
+
+hpvdemos_summary <- nhanes_hpv_eligible |>
+  select(DataCycle, Gender, Age) |>
+  tbl_summary(by = DataCycle) |>
+  modify_caption("**Table 2: Demographics of HPV Vaccine Questionnaire Subjects**") |>
+  bold_labels()
+print(hpvdemos_summary)
+
+```
+
+*Comment on general demographics.*
+
+#### Consideration #1:  Subjects between ages 49 and 59 who reported HPV vaccination
+
+```{r}
+cutoffsubjects <- filter(nhanes_all, Age > 49 & Age < 59 & (AnyHPVFemales == "Yes" | AnyHPVMales == "Yes"))
+
+count(cutoffsubjects, DataCycle)
+count(nhanes_hpv_eligible, DataCycle)
+```
+
+-   *NHANES 2013-2014: 14/6019 = 0.00233*
+
+-   *NHANES 2015-2016: 8/5780 = 0.00138*
+
+-   *NHANES 2017-2020: 31/8855 = 0.00350*
+
+*In the first three NHANES data cycles analyzed in this project, subjects ages 49-59 who reported previous HPV vaccination only comprised between 0.1% and 0.3% of the total eligible subject population. This age group is excluded from HPV vaccination questionnaire data in the 2021-2023 NHANES.*
+
+#### Consideration #2:  Subjects reporting HPV vaccination prior to age 9
+
+```{r}
+earlyhpvsubjects <- filter(nhanes_all, FirstDoseAge < 9)
+earlyhpvsubjects
+
+count(earlyhpvsubjects, DataCycle)
+count(nhanes_hpv_eligible, DataCycle)
+```
+
+-   *NHANES 2013-2014: 12/6019 = 0.00199*
+
+-   *NHANES 2015-2016: 20/5780 = 0.00346*
+
+-   *NHANES 2017-2020: 42/8855 = 0.00474*
+
+-   *NHANES 2021-2023: 42/5347 = 0.00785*
+
+*While another relatively small group– comprising between approximately 0.1% and 0.7% of the total eligible subject population for each NHANES cycle– individuals reporting initial HPV vaccination before age 9 pose a challenge to data analysis. There is very little information available about HPV immunization in children under 9, and although earlier immunization is generally preferable, current guidelines indicate age 9 as the earliest approved age for HPV vaccination.*
+
+*It is possible that some immunization questionnaire responses were incorrect– especially in cases where the first HPV dose age was reported as age 1 or 2, as hepatitis B (HBV) vaccination is typically completed in the first year of life. Although small and potentially more reflective of data inaccuracy, the proportion of early-vaccinated HPV subjects continuously increased over the past four NHANES cycles, and is worth further monitoring in future years.*
+
+### Question #1: Any HPV Vaccination
+
+```{r}
+
+q1summary <- nhanes_hpv_eligible |>
+  select(DataCycle, Gender, AnyHPVFemales, AnyHPVMales) |>
+  tbl_summary(by = DataCycle) |>
+  remove_row_type(variables = c(AnyHPVFemales, AnyHPVMales), 
+                  type = "missing") |>
+  modify_caption("**Question #1: Have you ever received one or more doses of HPV vaccine?**") |>
+  bold_labels()
+q1summary
+
+hpvq1fem1 <- ggplot(data=subset(nhanes_hpv_eligible, !is.na(AnyHPVFemales)), 
+  aes(x = DataCycle, fill = AnyHPVFemales)) + 
+  geom_bar() + 
+  labs(title = "HPV Vaccination, Female (Totals)") +
+  labs(x = "NHANES Data Cycle", y = "Number of subjects") +
+  theme(title = element_text(size = 10), 
+        axis.text.x = element_text(angle = 45, size= 7),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 7)) +
+  scale_fill_paletteer_d("ggthemes::excel_Celestial")
+
+hpvq1fem2 <- ggplot(data=subset(nhanes_hpv_eligible, !is.na(AnyHPVFemales)), 
+  aes(x = DataCycle, fill = AnyHPVFemales)) + 
+  geom_bar(position = "fill") + 
+  labs(title = "HPV Vaccination, Female (Proportions)") +
+  labs(x = "NHANES Data Cycle", y = "Percentage of subjects") +
+  theme(title = element_text(size = 10), 
+        axis.text.x = element_text(angle = 45, size= 7),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 7)) +
+  scale_fill_paletteer_d("vangogh::Chaise")
+
+plot_grid(hpvq1fem1, hpvq1fem2, label_size = 3)
+
+hpvq1male1 <- ggplot(data=subset(nhanes_hpv_eligible, !is.na(AnyHPVMales)), 
+  aes(x = DataCycle, fill = AnyHPVMales)) + 
+  geom_bar() +
+  labs(title = "HPV Vaccination, Male (Totals)") +
+  labs(x = "NHANES Data Cycle", y = "Number of subjects") +
+  theme(title = element_text(size = 10), 
+        axis.text.x = element_text(angle = 45, size= 7),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 7)) +
+  scale_fill_paletteer_d("MetBrewer::Archambault")
+
+hpvq1male2 <- ggplot(data=subset(nhanes_hpv_eligible, !is.na(AnyHPVMales)), 
+  aes(x = DataCycle, fill = AnyHPVMales)) + 
+  geom_bar(position = "fill") +
+  labs(title = "HPV Vaccination, Male (Proportions)") +
+  labs(x = "NHANES Data Cycle", y = "Percentage of subjects") +
+  theme(title = element_text(size = 10), 
+        axis.text.x = element_text(angle = 45, size= 7),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 7)) +
+  scale_fill_paletteer_d("beyonce::X11")
+
+plot_grid(hpvq1male1, hpvq1male2, label_size = 5)
+
+levels(nhanes_hpv_eligible$AnyHPVShots)
+levels(nhanes2013$AnyHPVShots)
+levels(nhanes2021$AnyHPVShots)
+
+# Checked levels to confirm "Yes" answer to HPV vaccination history is the independent outcome being analyzed.
+
+summary((glm(AnyHPVShots ~ Gender, data = nhanes2013, family = binomial())))
+summary((glm(AnyHPVShots ~ Gender, data = nhanes2015, family = binomial())))
+summary((glm(AnyHPVShots ~ Gender, data = nhanes2017, family = binomial())))
+summary((glm(AnyHPVShots ~ Gender, data = nhanes2021, family = binomial())))
+
+```
+
+*In reviewing the results above...*
+
+### Question #2: Age at First HPV Vaccination
+
+```{r}
+
+unknownfirstdoseage <- filter(nhanes_hpv_eligible, FirstDoseAge == "999")
+knownfirstdoseage <- filter(nhanes_hpv_eligible, FirstDoseAge != "999" & !is.na(FirstDoseAge))
+
+count(unknownfirstdoseage, name = 'Unknown First Dose Age')
+count(knownfirstdoseage, name = 'Known First Dose Age')
+
+q2summary <- nhanes_hpv_eligible |>
+  select(DataCycle, Gender, FirstDoseAge) |>
+  tbl_summary(by = DataCycle) |>
+  remove_row_type(variables = c(FirstDoseAge), 
+                  type = "missing") |>
+  modify_caption("**Question #2: How old were you when you received your first dose of HPV vaccine?**") |>
+  bold_labels()
+q2summary
+
+ggplot(knownfirstdoseage, aes(DataCycle, FirstDoseAge)) +
+  geom_violin() + 
+  geom_jitter(aes(color = FirstDoseAge), alpha = 0.5) +
+  facet_grid(. ~ Gender) + 
+  scale_color_viridis(option="plasma", limits=c(1,65)) +
+  ylim(0, 60) +
+  labs(title = "Age at First HPV Vaccination") +
+  labs(x = "NHANES Data Cycle", y = "Age in years") + 
+  theme(title = element_text(size = 10), 
+        axis.text.x = element_text(angle = 45, size = 7),
+        legend.title = element_text(size = 7), 
+        legend.text = element_text(size = 7))
+
+knownfirstdoseage |>
+  group_by(Gender, DataCycle) |>
+  summarize(AvgFirstHPVAge = mean(FirstDoseAge))
+```
+
+*Review results.*
+
+### Question #3: Total Number of HPV Vaccines Received
 
 ```{r}
 
 ```
 
-Describe your results and include relevant tables, plots, and code/comments used to obtain them. You may refer to the @sec-methods as needed. End with a brief conclusion of your findings related to the question you set out to address. You can include references if you'd like, but this is not required.
+*Describe your results and include relevant tables, plots, and code/comments used to obtain them. You may refer to the @sec-methods as needed. End with a brief conclusion of your findings related to the question you set out to address. You can include references if you'd like, but this is not required.*
 
-## Conclusion
+## *Conclusion*
 
-This the conclusion. The @sec-results can be invoked here.
+*This the conclusion. The @sec-results can be invoked here.*
 
-## Acknowledgements
+## *Acknowledgements*
 
-Acknowledgements here.
+*Acknowledgements here.*
 
 ## References
 
@@ -150,3 +434,7 @@ Acknowledgements here.
 5.  Meites E, Szilagyi PG, Chesson HW, Unger ER, Romero JR, Markowitz LE. *Human Papillomavirus Vaccination for Adults: Updated Recommendations of the Advisory Committee on Immunization Practices*. MMWR Morbidity and Mortality Weekly Report 2019;68: 698–702.
 
 6.  Ellingson, M. K., Sheikha, H., Nyhan, K., Oliveira, C. R., & Niccolai, L. M. (2023). Human papillomavirus vaccine effectiveness by age at vaccination: A systematic review. *Human vaccines & immunotherapeutics*, 19(2), 2239085.
+
+7.  Centers for Disease Control and Prevention. (2024). *Brief overview of sample design, nonresponse bias assessment, and analytic guidelines for NHANES August 2021-August 2023*. Centers for Disease Control and Prevention. https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/overviewbrief.aspx?Cycle=2021-2023
+
+8.  Centers for Disease Control and Prevention. (2024). *SAS Viewer*. Centers for Disease Control and Prevention. https://wwwn.cdc.gov/nchs/nhanes/SasViewer.aspx
