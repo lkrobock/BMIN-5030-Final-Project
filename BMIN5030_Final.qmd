@@ -2,9 +2,12 @@
 title: "Trends in Human Papillomavirus (HPV) Vaccination in the United States, 2013-2023"
 subtitle: "BMIN 5030 Final Project"
 author: "Lee Krobock"
-format: html
+format: 
+  html:
+    toc: true
+    toc-location: left
 editor: visual
-number-sections: true
+number-sections: false
 embed-resources: true
 ---
 
@@ -20,13 +23,13 @@ A relatively recent development in preventative medicine, the human papillomavir
 
 The first vaccine against human papillomavirus, Gardasil 4vHPV, was licensed for use by the U.S. Food and Drug Administration (FDA) in June 2006, followed by official recommendations for use by the Advisory Committee on Immunization Practices (ACIP) published in March 2007.^2^ This quadrivalent vaccine provided protection against four strains of HPV and was initially recommended only for female patients between the ages of 9 and 26 years.^2^ Subsequently, in 2010, these recommendations were expanded to include males between ages 9 and 26.^3^ Following the 2015 FDA approval of a nonavalent HPV vaccine, which provided protection against an additional five disease-associated strains, the ACIP updated its recommendations to consider two appropriately-timed doses of HPV vaccine to be a completed series in patients who received the first dose between ages 9 and 14.^4^ The most recent update to HPV immunization guidelines recommends “shared clinical decision-making” to guide vaccination in adults between ages 27 and 45 years old, and notes that HPV vaccines are not licensed for use in adults over age 45.^5^
 
-There are significant and well-described benefits to HPV vaccination– studies have demonstrated decreased risk of strain-specific HPV infection and associated growths, dysplasias, and cancers.^1,6^ Furthermore, Ellingson et al. noted in their systematic review that multiple studies suggest increased vaccine effectiveness with younger patient age at vaccination.^6^ In practice, however, clinicians have encountered challenges in implementing HPV vaccination as a standard preventative care practice.  In addition to slow shifts in practice following official recommendations and guideline updates, providers describe patient hesitancy early in the history of the HPV vaccine, related to potential side effects, adverse effects, and concerns about children and adolescents becoming sexually active earlier following vaccination.  In one clinician’s experience, it was not until the link between HPV and cancer became more widely understood by the public and HPV vaccination was marketed toward adults in addition to pediatric patients that it gained traction with the public.
+There are significant and well-described benefits to HPV vaccination– studies have demonstrated decreased risk of strain-specific HPV infection and associated growths, dysplasias, and cancers.^1,6^ Furthermore, Ellingson et al. noted in their systematic review that multiple studies suggest increased vaccine effectiveness with younger patient age at vaccination.^6^ In practice, however, clinicians have encountered challenges in implementing HPV vaccination as a standard preventative care practice.  For this project, I spoke with five family medicine and primary care clinicians to better understand their experiences in practice with HPV vaccination. In addition to slow shifts in practice following official recommendations and guideline updates, providers describe patient hesitancy early in the history of the HPV vaccine, related to potential side effects, adverse effects, and concerns about children and adolescents becoming sexually active earlier following vaccination.  In one clinician’s experience, it was not until the link between HPV and cancer became more widely understood by the public and HPV vaccination was marketed toward adults in addition to pediatric patients that it gained traction with the public.
 
 Preventative healthcare, including immunization, is an interdisciplinary pursuit that requires insight and participation from clinicians, health educators, epidemiologists and public health researchers, medical and industry researchers, policymakers, and patient stakeholders.  By analyzing the data, I hope to identify and describe changes in HPV vaccination practices that may inform ongoing efforts in health promotion and preventative care.
 
 ## Methods {#sec-methods}
 
-The National Health and Nutrition Examination Survey, or NHANES, is a multimodal study program initially conducted by the Centers for Disease Control (CDC) in the early 1960s, intended to provide nationally-representative data on health and nutrition in the United States. Over the past 25 years, the NHANES program evolved into an annual study consisting of health and dietary questionnaires, physical examinations, and laboratory testing. Data is typically reported in two year cycles, during which approximately 5,000 subjects are examined. Sampling and weighting procedures are designed and reviewed with each data cycle so the NHANES captures information that can be considered representative of the entire United States.
+As discussed in this course, the National Health and Nutrition Examination Survey, or NHANES, is a multimodal study program initially conducted by the Centers for Disease Control (CDC) in the early 1960s, intended to provide nationally-representative data on health and nutrition in the United States. Over the past 25 years, the NHANES program evolved into an annual study consisting of health and dietary questionnaires, physical examinations, and laboratory testing. Data is typically reported in two year cycles, during which approximately 5,000 subjects are examined. Sampling and weighting procedures are designed and reviewed with each data cycle so the NHANES captures information that can be considered representative of the entire United States.
 
 The NHANES program was suspended from March 2020 to August 2021 due to the COVID-19 pandemic. Its resumption in 2021 was marked by changes in sampling and study design to mitigate the ongoing spread of COVID-19, and decreased response rates consistent with trends described among other large scale U.S. surveys and studies.^7^ The most recently published NHANES datasets available to the public are from this first post-pandemic survey cycle, conducted from 2021 to 2023.
 
@@ -600,7 +603,17 @@ Analysis of the NHANES HPV vaccination data over the past 10 years yields severa
 
 -   The proportion of subjects who reported not knowing their HPV vaccination history has continuously increased since 2013 across all three metrics (any vaccine history, age at first dose, and number of doses received.)
 
-*To add recommendations.*
+With these observations in mind, there are several recommendations for ongoing and future clinical practice, and efforts to increase HPV vaccination among all patients:
+
+-   Continue efforts to promote HPV vaccination in pediatric, gynecologic, and adult primary care settings, including discussion of benefits and importance of vaccination regardless of sex or gender.
+
+-   Further research into HPV-related outcomes in patients who receive their first HPV vaccine prior to age 9, in order to inform an official statement and recommendations from ACIP/CDC, as vaccination in patients younger than age 9 has increased over the past decade.
+
+-   Prioritize efforts to complete follow-up care and to close gaps related to care disruption and incompleteness-- for example, missing and incomplete HPV vaccination due to COVID-19 related care disruption.
+
+-   Encourage patients' access, knowledge, and understanding of personal health data, including immunization history. This has the potential to improve as electronic health records continue to become more comprehensive, interoperable, and accessible; however, ensuring that patients and providers alike have complete personal health information remains a challenge, especially with patients who access care at multiple practices and health systems.
+
+HPV vaccination is a crucial preventative healthcare intervention with demonstrated efficacy against HPV and its serious complications, including cancer. By analyzing nationally-representative NHANES data from 2013 to 2023, we can better understand how vaccination practices and trends have evolved, and identify potential interventions to increase vaccination and series completion in all patients.
 
 ## Acknowledgements
 
